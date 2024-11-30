@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+    <style>
+        #response {
+            display: flex;
+            flex-direction: column;
+        }
+        
+    </style>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <button id="connectBtn">Connect to Server</button>
+    <br><br>
+    <input type="text" id="messageInput" placeholder="Type your message">
+    <button id="sendBtn" disabled>Send Message</button>
+    <br><br>
+    <div id="response"></div>
+   
+
+    <script defer>
+        const connectBtn = document.getElementById('connectBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const messageInput = document.getElementById('messageInput');
+        const responseDiv = document.getElementById('response');
+        let socket;
+
+        connectBtn.addEventListener('click', () => {
+            socket = new WebSocket('ws://192.168.100.6:4040');
+            socket.onopen = () => {
+                console.log('Connected to server');
+                connectBtn.disabled = true;
+                sendBtn.disabled = false;
+            };
+
+            socket.onmessage =(message) => {
+                const messageElement = document.createElement('div');
+                const paragraph = document.createElement('p');
+                paragraph.textContent = message.data;
+                messageElement.appendChild(paragraph);
+                responseDiv.appendChild(messageElement);
+                
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            socket.onclose = () => {
+                console.log('Disconnected from server');
+                connectBtn.disabled = false;
+                sendBtn.disabled = true;
+            };
+        });
+
+        
+        sendBtn.addEventListener('click', () => {
+            const message = messageInput.value;
+            if (message && socket.readyState === WebSocket.OPEN) {
+                socket.send(message); // Send message to the server
+                
+               
+                messageInput.value = ''; // Clear input field
+            }
+        });
+    </script>
+</body>
+</html>
