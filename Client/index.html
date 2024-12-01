@@ -12,8 +12,6 @@
         .main {
             display: none;
         }
-       
-        /* not mandatory */
     </style>
 </head>
 <body>
@@ -21,21 +19,16 @@
         <label for="nameInput">Enter your name </label>
         <input type="text" id="nameInput" placeholder="Enter your name">
         <button id="start">Start Chatting</button>
-    
     </div>
    
     <div class="main">
         <h1>WebSocket Client</h1>
-    <button id="connectBtn">Connect to Server</button>
-    <br><br>
-    <input type="text" id="messageInput" placeholder="Type your message">
-    <button id="sendBtn" disabled>Send Message</button>
-
-    <br><br>
-    <div id="response"></div>
-   
-
-
+        <button id="connectBtn">Connect to Server</button>
+        <br><br>
+        <input type="text" id="messageInput" placeholder="Type your message">
+        <button id="sendBtn" disabled>Send Message</button>
+        <br><br>
+        <div id="response"></div>
     </div>
     
     <script defer>
@@ -48,6 +41,19 @@
         const nameInput = document.getElementById('nameInput');
         const dialogue_box = document.querySelector('.dialogue_box');
         let socket;
+        let username = '';
+
+    
+        startBtn.addEventListener('click', () => {
+            username = nameInput.value.trim();
+            if(username.length === 0) {
+                alert('Please enter your name!');
+                return; 
+            }
+
+            dialogue_box.style.display = 'none';
+            main.style.display = 'block';
+        });
 
        
         connectBtn.addEventListener('click', () => {
@@ -56,21 +62,25 @@
                 console.log('Connected to server');
                 connectBtn.disabled = true;
                 sendBtn.disabled = false;
+                socket.send(JSON.stringify({ type: 'name', name: username }));
             };
 
-            socket.onmessage =(message) => {
+
+            socket.onmessage = (event) => {
+                const serverMessage = event.data
                 const messageElement = document.createElement('div');
                 const paragraph = document.createElement('p');
-                paragraph.textContent = message.data;
+                paragraph.textContent = serverMessage; 
                 messageElement.appendChild(paragraph);
                 responseDiv.appendChild(messageElement);
-                
             };
 
+         
             socket.onerror = (error) => {
                 console.error('WebSocket error:', error);
             };
 
+           
             socket.onclose = () => {
                 console.log('Disconnected from server');
                 connectBtn.disabled = false;
@@ -78,27 +88,14 @@
             };
         });
 
-        
+       
         sendBtn.addEventListener('click', () => {
-            const message = messageInput.value;
+            const message = messageInput.value.trim();
             if (message && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({message: message, type:'message'
-                }));
-                
-               
-                messageInput.value = '';
+                socket.send(JSON.stringify({message, type:"message"}));
+                console.log(JSON.stringify({message, type:"message"}))
+                messageInput.value = ''; 
             }
-        });
-        startBtn.addEventListener('click', () => {
-            dialogue_box.style.display = 'none';
-            main.style.display = 'block';
-            const name = nameInput.value;
-            if(name.trim().length === 0) {
-                socket.send(JSON.stringify({name: 'Unknown', type:'name'
-                }));
-            }
-            socket.send(JSON.stringify({name, type:'name'}))
-
         });
     </script>
 </body>

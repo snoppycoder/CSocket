@@ -7,6 +7,7 @@ import * as WebSocket from 'ws'
 export class ServerService implements OnModuleDestroy {
     private server: WebSocket.Server;
     private sockets: Map<WebSocket, string> = new Map();
+
     constructor() {
        this.server = new WebSocket.Server({port:4040})
        this.looksFor();
@@ -21,15 +22,16 @@ export class ServerService implements OnModuleDestroy {
     MessageHandler(socket: WebSocket) : void { 
          socket.on('message', (message) => {
             try {
-                const data = JSON.parse(message.toString());
-                if(data.type === 'name') {
-                    this.sockets.set(socket, data.name);
-                    this.broadcast(`${data.name} joined the chat`)
+                  let parsedMessage = JSON.parse(message.toString())
+                  if(parsedMessage.type === 'name' && socket.readyState === WebSocket.OPEN) {
+                    const name = parsedMessage.name;
+                    this.sockets.set(socket, name);
+                    this.broadcast(`New user connected: ${name}`);
+                  }
+                  else if(parsedMessage.type === 'message') {
+                    this.broadcast(parsedMessage.message)
+                  }
 
-                }
-                if(data.type === 'message') {
-                    this.broadcast(`${this.sockets.get(socket)}: ${data.message}`)
-                }
                 
             }catch (err) {
                 console.error(err);
