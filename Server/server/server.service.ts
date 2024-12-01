@@ -2,11 +2,11 @@ import { Injectable, OnModuleDestroy} from '@nestjs/common';
 import * as WebSocket from 'ws' 
 
 
+
 @Injectable()
 export class ServerService implements OnModuleDestroy {
-    private socket: WebSocket;
     private server: WebSocket.Server;
-    private sockets: WebSocket[] = [];
+    private sockets: Map<WebSocket, string> = new Map();
     constructor() {
        this.server = new WebSocket.Server({port:4040})
        this.looksFor();
@@ -14,31 +14,44 @@ export class ServerService implements OnModuleDestroy {
     looksFor():void {
         this.server.on('connection', (socket) => {
             console.log('Client connected')
-            this.sockets.push(socket);
             this.MessageHandler(socket);
         })
 
     }
     MessageHandler(socket: WebSocket) : void { 
          socket.on('message', (message) => {
-            this.broadcast(message.toString());
-            console.log('Received message: ', message.toString());
+            try {
+                const data = JSON.parse(message.toString());
+                if(data.type === 'name') {
+                    this.sockets.set(socket, data.name);
+                    this.broadcast(`${data.name} joined the chat`)
+
+                }
+                if(data.type === 'message') {
+                    this.broadcast(`${this.sockets.get(socket)}: ${data.message}`)
+                }
+                
+            }catch (err) {
+                console.error(err);
+                return;
+            }
+            
          })
 
 
     }broadcast(message: string): void {
-        this.sockets.forEach(socket => {
-              socket.send(`${message}`);
+        this.sockets.forEach((name, socket) => {
+            socket.send(`${message}`);
     
         });
     }
 
 
     onModuleDestroy() {
-       
-           this.sockets.forEach(socket => socket.close())
-           console.log('Disconnected from the server')
-        
-    }
-    
+         this.sockets.forEach((name, socket) => {
+            console.log(`Closing connection for ${name}`);
+            socket.close(); // Close the WebSocket connection
+        });
+        console.log('Disconnected from the server');
+}
 }

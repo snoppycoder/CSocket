@@ -9,26 +9,47 @@
             display: flex;
             flex-direction: column;
         }
-        
+        .main {
+            display: none;
+        }
+       
+        /* not mandatory */
     </style>
 </head>
 <body>
-    <h1>WebSocket Client</h1>
+    <div class="dialogue_box">
+        <label for="nameInput">Enter your name </label>
+        <input type="text" id="nameInput" placeholder="Enter your name">
+        <button id="start">Start Chatting</button>
+    
+    </div>
+   
+    <div class="main">
+        <h1>WebSocket Client</h1>
     <button id="connectBtn">Connect to Server</button>
     <br><br>
     <input type="text" id="messageInput" placeholder="Type your message">
     <button id="sendBtn" disabled>Send Message</button>
+
     <br><br>
     <div id="response"></div>
    
 
+
+    </div>
+    
     <script defer>
         const connectBtn = document.getElementById('connectBtn');
         const sendBtn = document.getElementById('sendBtn');
         const messageInput = document.getElementById('messageInput');
         const responseDiv = document.getElementById('response');
+        const startBtn = document.getElementById('start');
+        const main = document.querySelector('.main');
+        const nameInput = document.getElementById('nameInput');
+        const dialogue_box = document.querySelector('.dialogue_box');
         let socket;
 
+       
         connectBtn.addEventListener('click', () => {
             socket = new WebSocket('ws://192.168.100.6:4040');
             socket.onopen = () => {
@@ -61,11 +82,23 @@
         sendBtn.addEventListener('click', () => {
             const message = messageInput.value;
             if (message && socket.readyState === WebSocket.OPEN) {
-                socket.send(message); // Send message to the server
+                socket.send(JSON.stringify({message: message, type:'message'
+                }));
                 
                
-                messageInput.value = ''; // Clear input field
+                messageInput.value = '';
             }
+        });
+        startBtn.addEventListener('click', () => {
+            dialogue_box.style.display = 'none';
+            main.style.display = 'block';
+            const name = nameInput.value;
+            if(name.trim().length === 0) {
+                socket.send(JSON.stringify({name: 'Unknown', type:'name'
+                }));
+            }
+            socket.send(JSON.stringify({name, type:'name'}))
+
         });
     </script>
 </body>
